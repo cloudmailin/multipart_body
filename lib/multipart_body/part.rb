@@ -14,9 +14,7 @@ class Part < Struct.new(:name, :body, :filename, :content_disposition, :content_
   end
   
   def from_args(name, body, filename=nil)
-    self[:name] = name
-    self[:body] = body
-    self[:filename] = filename
+    self.from_hash(:name => name, :body => body, :filename => filename)
   end
   
   def header
