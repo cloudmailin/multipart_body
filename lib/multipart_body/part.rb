@@ -9,7 +9,12 @@ class Part < Struct.new(:name, :body, :filename, :content_disposition, :content_
   
   def from_hash(hash)
     hash.each_pair do |k, v|
-      self[k] = v
+      if k.to_s == 'body' && (v.is_a?(File) || v.is_a?(Tempfile))
+        self[k] = v.read
+        self['filename'] = File.basename(v)
+      else
+        self[k] = v
+      end
     end
   end
   

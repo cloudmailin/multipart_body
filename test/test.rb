@@ -1,7 +1,8 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
+require 'tempfile'
 
 class MultipartBodyTest < Test::Unit::TestCase
-  context "MultipartBodyBody" do
+  context "MultipartBody" do
     setup do
       @hash = {:test => 'test', :two => 'two'}
       @parts = [Part.new('name', 'value'), Part.new('name2', 'value2')]
@@ -63,6 +64,10 @@ class MultipartBodyTest < Test::Unit::TestCase
   context "a Part" do
     setup do
       @part = Part
+      @file = Tempfile.new('file')
+      @file.write('hello')
+      @file.flush
+      @file.open
     end
     
     should "assign values when sent #new with a hash" do
@@ -139,6 +144,16 @@ class MultipartBodyTest < Test::Unit::TestCase
     should "output the header and body when sent #to_s" do
       part = Part.new(:name => 'key', :body => 'content')
       assert_equal "#{part.header}\r\n#{part.body}", part.to_s
+    end
+    
+    should "add the files content not the file when passed a file" do
+      part = Part.new(:name => 'key', :body => @file)
+      assert_equal 'hello', part.body
+    end
+    
+    should "automatically assign a filename when passed a file to body" do
+      part = Part.new(:name => 'key', :body => @file)
+      assert_not_nil part.filename
     end
   end
 end
