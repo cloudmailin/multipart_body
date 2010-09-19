@@ -5,6 +5,7 @@ class MultipartBodyTest < Test::Unit::TestCase
     setup do
       @hash = {:test => 'test', :two => 'two'}
       @parts = [Part.new('name', 'value'), Part.new('name2', 'value2')]
+      @example_text = "------multipart-boundary-307380\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nvalue\r\n------multipart-boundary-307380\r\nContent-Disposition: form-data; name=\"name2\"\r\n\r\nvalue2\r\n------multipart-boundary-307380--"
     end
     
     should "return a new multipart when sent #from_hash" do
@@ -51,6 +52,12 @@ class MultipartBodyTest < Test::Unit::TestCase
       multipart = MultipartBody.new(@parts)
       assert_match multipart.parts.join("\r\n--#{multipart.boundary}\r\n"), multipart.to_s
     end
+    
+    should "contrsuct a valid multipart text when passed #to_s" do
+      multipart = MultipartBody.new(@parts)
+      multipart.boundary = '----multipart-boundary-307380'
+      assert_equal @example_text, multipart.to_s
+    end
   end
   
   context "a Part" do
@@ -86,7 +93,22 @@ class MultipartBodyTest < Test::Unit::TestCase
       assert_equal nil, part.filename
     end
     
-    should "include a content disposition when sent #header name" do
+    should "include a content type when one is set" do
+      part = Part.new(:content_type => 'plain/text', :body => 'content')
+      assert_match "Content-Type: plain\/text\r\n", part.header
+    end
+    
+    should "include a content disposition when sent #header and one is set" do
+      part = Part.new(:content_disposition => 'content-dispo', :body => 'content')
+      assert_match "Content-Disposition: content-dispo\r\n", part.header
+    end
+    
+    should "not include a content disposition of form-data when nothing is set" do
+      part = Part.new(:body => 'content')
+      assert_no_match /content-disposition/i, part.header
+    end
+    
+    should "include a content disposition when sent #header and name is set" do
       part = Part.new(:name => 'key', :body => 'content')
       assert_match /content-disposition: form-data; name="key"/i, part.header
     end
@@ -116,7 +138,7 @@ class MultipartBodyTest < Test::Unit::TestCase
     
     should "output the header and body when sent #to_s" do
       part = Part.new(:name => 'key', :body => 'content')
-      assert_equal "#{part.header}\r\n\r\n#{part.body}", part.to_s
+      assert_equal "#{part.header}\r\n#{part.body}", part.to_s
     end
   end
 end

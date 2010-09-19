@@ -1,4 +1,4 @@
-class Part < Struct.new(:name, :body, :filename, :content_type, :encoding)
+class Part < Struct.new(:name, :body, :filename, :content_disposition, :content_type, :encoding)
   def initialize(*args)
     if args.flatten.first.is_a? Hash
       from_hash(args.flatten.first)
@@ -20,10 +20,15 @@ class Part < Struct.new(:name, :body, :filename, :content_type, :encoding)
   end
   
   def header
-    header = "Content-Disposition: form-data; name=\"#{name}\""
-    header << "; filename=\"#{filename}\"" if filename
-    header << "\r\nContent-Type: #{content_type}" if content_type
-    header << "\r\nContent-Transfer-Encoding: #{encoding}" if encoding
+    header = ""
+    if content_disposition || name
+      header << "Content-Disposition: #{content_disposition || 'form-data'}"
+      header << "; name=\"#{name}\"" if name && !content_disposition
+      header << "; filename=\"#{filename}\"" if filename && !content_disposition
+      header << "\r\n"
+    end
+    header << "Content-Type: #{content_type}\r\n" if content_type
+    header << "Content-Transfer-Encoding: #{encoding}\r\n" if encoding
     header
   end
   
@@ -38,6 +43,6 @@ class Part < Struct.new(:name, :body, :filename, :content_type, :encoding)
   end
   
   def to_s
-    "#{header}\r\n\r\n#{encoded_body}"
+    "#{header}\r\n#{encoded_body}"
   end
 end
