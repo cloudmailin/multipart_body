@@ -7,6 +7,10 @@ class MultipartBodyTest < Test::Unit::TestCase
       @hash = {:test => 'test', :two => 'two'}
       @parts = [Part.new('name', 'value'), Part.new('name2', 'value2')]
       @example_text = "------multipart-boundary-307380\r\nContent-Disposition: form-data; name=\"name\"\r\n\r\nvalue\r\n------multipart-boundary-307380\r\nContent-Disposition: form-data; name=\"name2\"\r\n\r\nvalue2\r\n------multipart-boundary-307380--"
+      @file = Tempfile.new('file')
+      @file.write('hello')
+      @file.flush
+      @file.open
     end
     
     should "return a new multipart when sent #from_hash" do
@@ -58,6 +62,14 @@ class MultipartBodyTest < Test::Unit::TestCase
       multipart = MultipartBody.new(@parts)
       multipart.boundary = '----multipart-boundary-307380'
       assert_equal @example_text, multipart.to_s
+    end
+    
+    should "construct a file part when create from hash" do
+      multipart = MultipartBody.new(:test => @file)
+      multipart.boundary = '----multipart-boundary-672923'
+      assert_equal 'hello', multipart.parts.first.body
+      assert_not_nil multipart.parts.first.filename
+      assert_match /------multipart-boundary-672923\r\nContent-Disposition: form-data; name=\"test\"; filename=\".*"\r\n\r\nhello\r\n------multipart-boundary-672923--/, multipart.to_s
     end
   end
   
