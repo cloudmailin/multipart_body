@@ -11,7 +11,7 @@ class Part < Struct.new(:name, :body, :filename, :content_disposition, :content_
     hash.each_pair do |k, v|
       if k.to_s == 'body' && (v.is_a?(File) || v.is_a?(Tempfile))
         self[k] = v.read
-        self['filename'] = File.basename(v)
+        self['filename'] = File.basename(v.path)
       else
         self[k] = v
       end
